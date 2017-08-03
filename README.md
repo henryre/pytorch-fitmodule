@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from pytorch_fitmodule import FitModule
 
-X, Y = torch.get_me_some_data()
+X, Y, n_classes = torch.get_me_some_data()
 
 class MLP(FitModule):
     def __init__(self, n_feats, n_classes, hidden_size=50):
@@ -20,7 +20,7 @@ class MLP(FitModule):
     def forward(self, x):
         return F.log_softmax(self.fc2(F.relu(self.fc1(x))))
 
-f = MLP(X.size()[1], Y.size()[1])
+f = MLP(X.size()[1], n_classes)
 
 def n_correct(y_true, y_pred):
     return (y_true == torch.max(y_pred, 1)[1]).sum()
