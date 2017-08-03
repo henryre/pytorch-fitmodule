@@ -92,7 +92,6 @@ class FitModule(Module):
             # Setup logger
             if verbose:
                 pb = ProgressBar(len(batches))
-            n_run = 0
             log = Log()
             epoch_loss = 0.0
             # Run batches
@@ -109,17 +108,19 @@ class FitModule(Module):
                 batch_loss.backward()
                 opt.step()
                 # Update status
-                n_run += batch_end - batch_start
                 epoch_loss += batch_loss.data[0]
-                log['train_loss'] = float(epoch_loss) / n_run
+                log['loss'] = float(epoch_loss) / (batch_i + 1)
                 if verbose:
                     pb.bar(batch_i, log.to_message())
             # Run metrics
             if metrics:
                 y_train_pred = self.predict(x, batch_size)
                 add_metrics_to_log(log, metrics, y, y_train_pred)
-                if val_x is not None and val_y is not None:
-                    y_val_pred = self.predict(val_x, batch_size)
+            if val_x is not None and val_y is not None:
+                y_val_pred = self.predict(val_x, batch_size)
+                val_loss = loss(Variable(y_val_pred), Variable(val_y))
+                log['val_loss'] = val_loss.data[0]
+                if metrics:
                     add_metrics_to_log(log, metrics, val_y, y_val_pred, 'val_')
             logs.append(log)
             if verbose:
