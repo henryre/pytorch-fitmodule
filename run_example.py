@@ -35,14 +35,9 @@ class MLP(FitModule):
     def __init__(self, n_feats, n_classes, hidden_size=50):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(n_feats, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, n_classes)
-
+        self.fc2 = nn.Linear(hidden_size, n_classes)
     def forward(self, x):
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.log_softmax(self.fc3(x))
-        return x
+        return F.log_softmax(self.fc2(F.relu(self.fc1(x))))
 
 f = MLP(n_feats, n_classes)
 
@@ -54,5 +49,5 @@ def accuracy(y_true, y_pred):
     return np.mean(y_true.numpy() == np.argmax(y_pred.numpy(), axis=1))
 
 f.fit(
-    X, Y, epochs=5, validation_split=0.1, seed=SEED, metrics=[accuracy]
+    X, Y, epochs=10, validation_split=0.3, seed=SEED, metrics=[accuracy]
 )
