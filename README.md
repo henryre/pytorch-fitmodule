@@ -47,18 +47,33 @@ python run_example.py
 ```
 
 ```bash
-Epoch 1 / 5
-[========================================] 100%	train_loss: 0.0432    accuracy: 0.4312    val_accuracy: 0.4360
+Epoch 1 / 10
+[========================================] 100%	train_loss: 0.0416    accuracy: 0.6251    val_accuracy: 0.6287
 
-Epoch 2 / 5
-[========================================] 100%	train_loss: 0.0283    accuracy: 0.8830    val_accuracy: 0.8950
+Epoch 2 / 10
+[========================================] 100%	train_loss: 0.0247    accuracy: 0.8834    val_accuracy: 0.8860
 
-Epoch 3 / 5
-[========================================] 100%	train_loss: 0.0148    accuracy: 0.8998    val_accuracy: 0.9050
+Epoch 3 / 10
+[========================================] 100%	train_loss: 0.0144    accuracy: 0.8990    val_accuracy: 0.8977
 
-Epoch 4 / 5
-[========================================] 100%	train_loss: 0.0098    accuracy: 0.9017    val_accuracy: 0.9050
+Epoch 4 / 10
+[========================================] 100%	train_loss: 0.0099    accuracy: 0.9141    val_accuracy: 0.9163
 
-Epoch 5 / 5
-[========================================] 100%	train_loss: 0.0077    accuracy: 0.9164    val_accuracy: 0.9170
+Epoch 5 / 10
+[========================================] 100%	train_loss: 0.0075    accuracy: 0.9414    val_accuracy: 0.9413
+
+Epoch 6 / 10
+[========================================] 100%	train_loss: 0.0059    accuracy: 0.9631    val_accuracy: 0.9620
+
+Epoch 7 / 10
+[========================================] 100%	train_loss: 0.0048    accuracy: 0.9773    val_accuracy: 0.9730
+
+Epoch 8 / 10
+[========================================] 100%	train_loss: 0.0039    accuracy: 0.9837    val_accuracy: 0.9800
+
+Epoch 9 / 10
+[========================================] 100%	train_loss: 0.0033    accuracy: 0.9880    val_accuracy: 0.9840
+
+Epoch 10 / 10
+[========================================] 100%	train_loss: 0.0028    accuracy: 0.9903    val_accuracy: 0.9860
 ```
