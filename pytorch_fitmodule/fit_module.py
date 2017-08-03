@@ -1,12 +1,13 @@
 import numpy as np
 import torch
 
+from collections import OrderedDict
 from functools import partial
 from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss, Module
 from torch.optim import SGD
 
-from .utils import add_metrics_to_log, Log, make_batches, ProgressBar
+from .utils import add_metrics_to_log, log_to_message, make_batches, ProgressBar
 
 
 DEFAULT_LOSS = CrossEntropyLoss()
@@ -60,7 +61,7 @@ class FitModule(Module):
                 where y_true and y_pred are both Tensors
 
         # Returns
-            list of Logs with training metrics
+            list of OrderedDicts with training metrics
         """
         if seed and seed >= 0:
             np.random.seed(seed)
@@ -92,7 +93,7 @@ class FitModule(Module):
             # Setup logger
             if verbose:
                 pb = ProgressBar(len(batches))
-            log = Log()
+            log = OrderedDict()
             epoch_loss = 0.0
             # Run batches
             for batch_i, (batch_start, batch_end) in enumerate(batches):
@@ -111,7 +112,7 @@ class FitModule(Module):
                 epoch_loss += batch_loss.data[0]
                 log['loss'] = float(epoch_loss) / (batch_i + 1)
                 if verbose:
-                    pb.bar(batch_i, log.to_message())
+                    pb.bar(batch_i, log_to_message(log))
             # Run metrics
             if metrics:
                 y_train_pred = self.predict(x, batch_size)
@@ -124,7 +125,7 @@ class FitModule(Module):
                     add_metrics_to_log(log, metrics, val_y, y_val_pred, 'val_')
             logs.append(log)
             if verbose:
-                pb.close(log.to_message())
+                pb.close(log_to_message(log))
         return logs
 
     def predict(self, x, batch_size=32):

@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 
-from collections import OrderedDict
 from functools import partial
 
 
@@ -23,10 +22,9 @@ def add_metrics_to_log(log, metrics, y_true, y_pred, prefix=''):
     return log
 
 
-class Log(OrderedDict):
-    def to_message(self, precision=4):
-        fmt = "{0}: {1:." + str(precision) + "f}"
-        return "    ".join(fmt.format(k, v) for k, v in self.items())
+def log_to_message(log, precision=4):
+    fmt = "{0}: {1:." + str(precision) + "f}"
+    return "    ".join(fmt.format(k, v) for k, v in log.items())
 
 
 class ProgressBar(object):
