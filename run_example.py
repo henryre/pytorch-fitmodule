@@ -18,14 +18,14 @@ def print_title(s):
 print_title("Generating data set")
 
 n_feats, n_classes = 200, 5
-X, Y = make_multilabel_classification(
+X, y = make_multilabel_classification(
     n_samples=10000, n_features=n_feats, n_classes=n_classes, n_labels=0.01,
     length=50, allow_unlabeled=False, sparse=False, return_indicator='dense',
     return_distributions=False, random_state=SEED
 )
-Y = np.argmax(Y, axis=1)
+y = np.argmax(y, axis=1)
 X = torch.from_numpy(X).float()
-Y = torch.from_numpy(Y).long()
+y = torch.from_numpy(y).long()
 
 
 ##### Define model #####
@@ -49,5 +49,5 @@ def accuracy(y_true, y_pred):
     return np.mean(y_true.numpy() == np.argmax(y_pred.numpy(), axis=1))
 
 f.fit(
-    X, Y, epochs=10, validation_split=0.3, seed=SEED, metrics=[accuracy]
+    X, y, epochs=10, validation_split=0.3, seed=SEED, metrics=[accuracy]
 )

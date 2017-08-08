@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 
 from collections import OrderedDict
@@ -7,7 +6,7 @@ from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss, Module
 from torch.optim import SGD
 
-from .utils import add_metrics_to_log, log_to_message, make_batches, ProgressBar
+from .utils import add_metrics_to_log, get_loader, log_to_message, ProgressBar
 
 
 DEFAULT_LOSS = CrossEntropyLoss()
@@ -17,8 +16,8 @@ DEFAULT_OPTIMIZER = partial(SGD, lr=0.001, momentum=0.9)
 class FitModule(Module):
 
     def fit(self,
-            x=None,
-            y=None,
+            X,
+            y,
             batch_size=32,
             epochs=1,
             verbose=1,
@@ -33,7 +32,7 @@ class FitModule(Module):
         """Trains the model similar to Keras' .fit(...) method
 
         # Arguments
-            x: training data Tensor.
+            X: training data Tensor.
             y: target data Tensor.
             batch_size: integer. Number of samples per gradient update.
             epochs: integer, the number of times to iterate
@@ -64,47 +63,39 @@ class FitModule(Module):
             list of OrderedDicts with training metrics
         """
         if seed and seed >= 0:
-            np.random.seed(seed)
             torch.manual_seed(seed)
         # Prepare validation data
         if validation_data:
-            val_x, val_y = validation_data
+            X_val, y_val = validation_data
         elif validation_split and 0. < validation_split < 1.:
-            split = int(x.size()[0] * (1. - validation_split))
-            x, val_x = x[:split], x[split:]
-            y, val_y = y[:split], y[split:]
+            split = int(X.size()[0] * (1. - validation_split))
+            X, X_val = X[:split], X[split:]
+            y, y_val = y[:split], y[split:]
         else:
-            val_x, val_y = None, None
+            X_val, y_val = None, None
+        # Build DataLoaders
+        train_data = get_loader(X, y, batch_size, shuffle)
         # Compile optimizer
         opt = optimizer(self.parameters())
         # Run training loop
         logs = []
         self.train()
-        n = x.size()[0]
-        train_idxs = np.arange(n)
         for t in range(initial_epoch, epochs):
             if verbose:
                 print("Epoch {0} / {1}".format(t+1, epochs))
-            # Shuffle training set
-            if shuffle:
-                np.random.shuffle(train_idxs)
-            # Get batches
-            batches = make_batches(n, batch_size)
             # Setup logger
             if verbose:
-                pb = ProgressBar(len(batches))
+                pb = ProgressBar(len(train_data))
             log = OrderedDict()
             epoch_loss = 0.0
             # Run batches
-            for batch_i, (batch_start, batch_end) in enumerate(batches):
+            for batch_i, batch_data in enumerate(train_data):
                 # Get batch data
-                batch_idxs = train_idxs[batch_start : batch_end]
-                batch_idxs = torch.from_numpy(batch_idxs).long()
-                x_batch = Variable(x[batch_idxs])
-                y_batch = Variable(y[batch_idxs])
+                X_batch = Variable(batch_data[0])
+                y_batch = Variable(batch_data[1])
                 # Backprop
                 opt.zero_grad()
-                y_batch_pred = self(x_batch)
+                y_batch_pred = self(X_batch)
                 batch_loss = loss(y_batch_pred, y_batch)
                 batch_loss.backward()
                 opt.step()
@@ -115,44 +106,44 @@ class FitModule(Module):
                     pb.bar(batch_i, log_to_message(log))
             # Run metrics
             if metrics:
-                y_train_pred = self.predict(x, batch_size)
+                y_train_pred = self.predict(X, batch_size)
                 add_metrics_to_log(log, metrics, y, y_train_pred)
-            if val_x is not None and val_y is not None:
-                y_val_pred = self.predict(val_x, batch_size)
-                val_loss = loss(Variable(y_val_pred), Variable(val_y))
+            if X_val is not None and y_val is not None:
+                y_val_pred = self.predict(X_val, batch_size)
+                val_loss = loss(Variable(y_val_pred), Variable(y_val))
                 log['val_loss'] = val_loss.data[0]
                 if metrics:
-                    add_metrics_to_log(log, metrics, val_y, y_val_pred, 'val_')
+                    add_metrics_to_log(log, metrics, y_val, y_val_pred, 'val_')
             logs.append(log)
             if verbose:
                 pb.close(log_to_message(log))
         return logs
 
-    def predict(self, x, batch_size=32):
+    def predict(self, X, batch_size=32):
         """Generates output predictions for the input samples.
 
         Computation is done in batches.
 
         # Arguments
-            x: input data Tensor.
+            X: input data Tensor.
             batch_size: integer.
 
         # Returns
             prediction Tensor.
         """
-        n = x.size()[0]
-        train_idxs = np.arange(n)
-        batches = make_batches(n, batch_size)
+        # Build DataLoader
+        data = get_loader(X, batch_size=batch_size)
+        # Batch prediction
         self.eval()
-        for batch_i, (batch_start, batch_end) in enumerate(batches):
-            # Get batch data
-            batch_idxs = train_idxs[batch_start : batch_end]
-            batch_idxs = torch.from_numpy(batch_idxs).long()
-            x_batch = Variable(x[batch_idxs])
-            # Predict
-            y_batch_pred = self(x_batch).data
+        r, n = 0, X.size()[0]
+        for batch_data in data:
+            # Predict on batch
+            X_batch = Variable(batch_data[0])
+            y_batch_pred = self(X_batch).data
             # Infer prediction shape
-            if batch_i == 0:
+            if r == 0:
                 y_pred = torch.zeros((n,) + y_batch_pred.size()[1:])
-            y_pred[batch_idxs] = y_batch_pred
+            # Add to prediction tensor
+            y_pred[r : min(n, r + batch_size)] = y_batch_pred
+            r += batch_size
         return y_pred
